@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:external_path/external_path.dart';
 import 'package:flutter/material.dart';
 import 'package:media_scanner/media_scanner.dart';
@@ -12,6 +11,10 @@ class Repository {
       "PzrwjMFFdssYI6z3sTYrAFpGwUnlnTE0Nft6rnGEsy8O6A0gKvBf6khO";
   final String baseURL = "https://api.pexels.com/v1/";
 
+  // In-memory list for storing cart items
+  List<Images> cartItems = [];
+
+  // Get list of images (curated)
   Future<List<Images>> getImagesList({required int? pageNumber}) async {
     String url = '';
 
@@ -45,6 +48,7 @@ class Repository {
     return imagesList;
   }
 
+  // Get image by ID
   Future<Images> getImageById({required int id}) async {
     final url = "${baseURL}photos/$id";
 
@@ -60,13 +64,13 @@ class Repository {
 
       if (response.statusCode >= 200 && response.statusCode <= 299) {
         final jsonData = json.decode(response.body);
-
         image = Images.fromJson(jsonData);
       }
     } catch (_) {}
     return image;
   }
 
+  // Get images by search query
   Future<List<Images>> getImagesBySearch({required String query}) async {
     final url = "${baseURL}search?query=$query&per_page=80";
     List<Images> imagesList = [];
@@ -92,6 +96,7 @@ class Repository {
     return imagesList;
   }
 
+  // Download image
   Future<void> downloadImage(
       {required String imageUrl,
       required int imageId,
@@ -122,5 +127,22 @@ class Repository {
         }
       }
     } catch (_) {}
+  }
+
+  // Add image to cart
+  void addToCart(Images image) {
+    cartItems.add(image);
+    print('Added to cart: ${image.imageID}');
+  }
+
+  // Remove image from cart
+  void removeFromCart(int imageId) {
+    cartItems.removeWhere((item) => item.imageID == imageId);
+    print('Removed from cart: $imageId');
+  }
+
+  // Get cart items
+  List<Images> getCartItems() {
+    return cartItems;
   }
 }

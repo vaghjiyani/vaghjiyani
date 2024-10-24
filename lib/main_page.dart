@@ -2,13 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:wallpaper_app/ProfilePage.dart';
 import 'package:wallpaper_app/modal/modal.dart';
 import 'package:wallpaper_app/preview_page.dart';
 import 'package:wallpaper_app/repo/repository.dart';
+import 'cart_page.dart'; // Import CartPage
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-
   @override
   State<MainPage> createState() => _MainPageState();
 }
@@ -18,6 +18,7 @@ class _MainPageState extends State<MainPage> {
   ScrollController scrollController = ScrollController();
   TextEditingController textEditingController = TextEditingController();
   late Future<List<Images>> imagesList;
+  List<Images> cartItems = []; // List to store cart items
   int pageNumber = 1;
   final List<String> categories = [
     'Nature',
@@ -47,6 +48,13 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
+  // Function to add image to cart
+  void addToCart(Images image) {
+    setState(() {
+      cartItems.add(image);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +79,39 @@ class _MainPageState extends State<MainPage> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              // Navigate to Cart Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(
+                    cartItems: cartItems,
+                    onRemove: (int) {},
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              // Navigate to Profile Page with dummy data
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(
+                    cartItems: cartItems,
+                    userName: 'John Doe', // Dummy user name
+                    userEmail: 'johndoe@example.com', // Dummy user email
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         controller: scrollController,
@@ -97,13 +138,10 @@ class _MainPageState extends State<MainPage> {
                     borderSide: const BorderSide(color: Colors.blue, width: 2),
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  errorBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
                   suffixIcon: Padding(
                     padding: const EdgeInsets.only(right: 5),
                     child: IconButton(
+                      color: Colors.black,
                       onPressed: () {
                         getImagesBySearch(query: textEditingController.text);
                       },
@@ -125,34 +163,35 @@ class _MainPageState extends State<MainPage> {
             SizedBox(
               height: 40,
               child: ListView.builder(
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        getImagesBySearch(query: categories[index]);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey, width: 1),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 0),
-                            child: Center(
-                              child: Text(
-                                categories[index],
-                              ),
+                shrinkWrap: true,
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      getImagesBySearch(query: categories[index]);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey, width: 1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 0),
+                          child: Center(
+                            child: Text(
+                              categories[index],
                             ),
                           ),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 20),
             FutureBuilder(
@@ -192,16 +231,34 @@ class _MainPageState extends State<MainPage> {
                                   ),
                                 );
                               },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: CachedNetworkImage(
-                                  fit: BoxFit.cover,
-                                  height: height > 300 ? 300 : height,
-                                  imageUrl:
-                                      snapshot.data![index].imagePotraitPath,
-                                  errorWidget: (context, url, error) =>
-                                      const Icon(Icons.error),
-                                ),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: CachedNetworkImage(
+                                      fit: BoxFit.cover,
+                                      height: height > 300 ? 300 : height,
+                                      imageUrl: snapshot
+                                          .data![index].imagePotraitPath,
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.error),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 10,
+                                    bottom: 10,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.add_shopping_cart,
+                                        color: Colors.black,
+                                      ),
+                                      onPressed: () {
+                                        // Add to cart
+                                        addToCart(snapshot.data![index]);
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },

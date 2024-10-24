@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:wallpaper_app/modal/modal.dart';
 import 'package:wallpaper_app/repo/repository.dart';
 
 class PreviewPage extends StatefulWidget {
   final String imageUrl;
   final int imageId;
+
   const PreviewPage({
     super.key,
     required this.imageId,
@@ -17,6 +19,19 @@ class PreviewPage extends StatefulWidget {
 
 class _PreviewPageState extends State<PreviewPage> {
   Repository repo = Repository();
+
+  // To keep track of whether the image is added to the cart or not
+  bool isAddedToCart = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Check if the image is already in the cart
+    isAddedToCart =
+        repo.getCartItems().any((item) => item.imageID == widget.imageId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +40,43 @@ class _PreviewPageState extends State<PreviewPage> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isAddedToCart ? Icons.shopping_cart : Icons.add_shopping_cart,
+              color: isAddedToCart ? Colors.green : Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                // Toggle cart state
+                isAddedToCart = !isAddedToCart;
+              });
+
+              // Show confirmation message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isAddedToCart ? 'Added to Cart' : 'Removed from Cart',
+                  ),
+                ),
+              );
+
+              // Create an image object to add or remove from cart
+              Images image = Images(
+                imageID: widget.imageId,
+                imagePotraitPath: widget.imageUrl,
+                imageAlt: '',
+              );
+
+              // Call repository to add/remove from cart
+              if (isAddedToCart) {
+                repo.addToCart(image);
+              } else {
+                repo.removeFromCart(widget.imageId);
+              }
+            },
+          )
+        ],
       ),
       body: CachedNetworkImage(
         fit: BoxFit.cover,
